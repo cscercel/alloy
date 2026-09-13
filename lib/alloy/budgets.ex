@@ -7,6 +7,7 @@ defmodule Alloy.Budgets do
   alias Ecto.Adapter.Transaction
   alias Ecto.Adapter.Transaction
   alias Ecto.Adapter.Transaction
+  alias Ecto.Adapter.Transaction
   alias Alloy.Repo
 
   alias Alloy.Budgets.Transaction
@@ -157,6 +158,41 @@ defmodule Alloy.Budgets do
   def change_transaction(%Scope{} = scope, %Transaction{} = transaction, attrs \\ %{}) do
     if transaction.id, do: _ = get_transaction!(scope, transaction.id)
     Transaction.changeset(transaction, attrs)
+  end
+
+  @doc """
+    Returns a summary of income and expense totals for a given account,
+    scoped to the given month, for accounts the scoped user belongs to.
+
+    Amounts are returned in cents. If there are no matching transactions,
+    both totals will be `nil`.
+
+    ## Examples
+
+      iex> monthly_summary(scope, account_id, 2026, 9)
+      %{income: 150000, expense: 92000}
+
+      iex> monthly_summary(scope, account_id_with_no_activity, 2026, 9)
+      %{income: nil, expense: nil}
+
+  """
+
+  def monthly_summary(%Scope{} = scope, account_id, year, month) do
+    start_date = Date.new!(year, month, 1)
+    end_date = Date.end_of_month(start_date)
+
+    Repo.one(
+      from t in Transaction,
+        join: au in AccountUser,
+        on: au.account_id == t.account_id,
+        where: au.user_id == ^scope.user.id,
+        where: t.account_id == ^account_id,
+        where: t.date >= ^start_date and t.date <= ^end_date,
+        select: %{
+          income: sum(fragment("CASE WHEN ? = 'income' THEN ? ELSE 0 END", t.type, t.amount)),
+          expense: sum(fragment("CASE WHEN ? = 'expense' THEN ? ELSE 0 END", t.type, t.amount))
+        }
+    )
   end
 
   # Temp
