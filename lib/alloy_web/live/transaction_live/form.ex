@@ -33,7 +33,7 @@ defmodule AlloyWeb.TransactionLive.Form do
           label="Type"
           options={[{"Expense", "expense"}, {"Income", "income"}]}
         />
-        <.input field={@form[:amount]} type="number" label="Amount (in cents)" />
+        <.input field={@form[:amount]} type="text" label="Amount" />
         <.input field={@form[:description]} type="text" label="Description" />
         <.input field={@form[:date]} type="date" label="Date" />
         <footer>
@@ -102,7 +102,7 @@ defmodule AlloyWeb.TransactionLive.Form do
     case Budgets.update_transaction(
            socket.assigns.current_scope,
            socket.assigns.transaction,
-           transaction_params
+           parse_amount(transaction_params)
          ) do
       {:ok, transaction} ->
         {:noreply,
@@ -118,7 +118,10 @@ defmodule AlloyWeb.TransactionLive.Form do
   end
 
   defp save_transaction(socket, :new, transaction_params) do
-    case Budgets.create_transaction(socket.assigns.current_scope, transaction_params) do
+    case Budgets.create_transaction(
+           socket.assigns.current_scope,
+           parse_amount(transaction_params)
+         ) do
       {:ok, transaction} ->
         {:noreply,
          socket
@@ -134,4 +137,8 @@ defmodule AlloyWeb.TransactionLive.Form do
 
   defp return_path(_scope, "index", _transaction), do: ~p"/transactions"
   defp return_path(_scope, "show", transaction), do: ~p"/transactions/#{transaction}"
+
+  defp parse_amount(params) do
+    Map.update!(params, "amount", &Alloy.Money.parse/1)
+  end
 end

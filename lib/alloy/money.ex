@@ -35,4 +35,23 @@ defmodule Alloy.Money do
     |> String.replace(~r/(\d{3})(?=\d)/, "\\1,")
     |> String.reverse()
   end
+
+  def parse(""), do: 0
+
+  def parse(dollar_string) when is_binary(dollar_string) do
+    case String.split(dollar_string, ".") do
+      [dollars] ->
+        String.replace(dollars, ",", "") |> String.to_integer() |> then(&(&1 * 100))
+
+      [dollars, cents] ->
+        dollars_in_cents =
+          String.replace(dollars, ",", "")
+          |> String.to_integer()
+          |> then(&(&1 * 100))
+
+        cents_integer = String.pad_trailing(cents, 2, "0") |> String.to_integer()
+
+        dollars_in_cents + cents_integer
+    end
+  end
 end

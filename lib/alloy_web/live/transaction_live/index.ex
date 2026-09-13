@@ -21,7 +21,7 @@ defmodule AlloyWeb.TransactionLive.Index do
         rows={@streams.transactions}
         row_click={fn {_id, transaction} -> JS.navigate(~p"/transactions/#{transaction}") end}
       >
-        <:col :let={{_id, transaction}} label="Amount">{transaction.amount}</:col>
+        <:col :let={{_id, transaction}} label="Amount">{Alloy.Money.format(transaction.amount)}</:col>
         <:col :let={{_id, transaction}} label="Description">{transaction.description}</:col>
         <:col :let={{_id, transaction}} label="Date">{transaction.date}</:col>
         <:col :let={{_id, transaction}} label="Type">{transaction.type}</:col>
@@ -67,7 +67,8 @@ defmodule AlloyWeb.TransactionLive.Index do
   @impl true
   def handle_info({type, %Alloy.Budgets.Transaction{}}, socket)
       when type in [:created, :updated, :deleted] do
-    {:noreply, stream(socket, :transactions, list_transactions(socket.assigns.current_scope), reset: true)}
+    {:noreply,
+     stream(socket, :transactions, list_transactions(socket.assigns.current_scope), reset: true)}
   end
 
   defp list_transactions(current_scope) do
