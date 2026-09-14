@@ -8,6 +8,7 @@ defmodule Alloy.Budgets do
   alias Ecto.Adapter.Transaction
   alias Ecto.Adapter.Transaction
   alias Ecto.Adapter.Transaction
+  alias Ecto.Adapter.Transaction
   alias Alloy.Repo
 
   alias Alloy.Budgets.Transaction
@@ -193,6 +194,45 @@ defmodule Alloy.Budgets do
           expense: sum(fragment("CASE WHEN ? = 'expense' THEN ? ELSE 0 END", t.type, t.amount))
         }
     )
+  end
+
+  def create_transfer(
+        %Scope{} = scope,
+        amount,
+        source_account,
+        destination_account,
+        description,
+        date
+      ) do
+    transfer_id = Ecto.UUID.generate()
+
+    Repo.transact(fn ->
+      expense_attrs = %{
+        "amount" => amount,
+        "date" => date,
+        "type" => "expense",
+        "account_id" => source_account.id,
+        "user_id" => scope.user.id,
+        "description" => description,
+        "transfer_id" => transfer_id
+      }
+
+      income_attrs = %{
+        "amount" => amount,
+        "date" => date,
+        "type" => "income",
+        "account_id" => destination_account.id,
+        "user_id" => scope.user.id,
+        "description" => description,
+        "transfer_id" => transfer_id
+      }
+
+      with {:ok, expense} <-
+             %Transaction{} |> Transaction.changeset(expense_attrs) |> Repo.insert(),
+           {:ok, income} <- %Transaction{} |> Transaction.changeset(income_attrs) |> Repo.insert() do
+        {:ok, {expense, income}}
+      end
+    end)
   end
 
   # Temp
