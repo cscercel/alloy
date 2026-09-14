@@ -445,4 +445,38 @@ defmodule Alloy.Accounts do
     if account.id, do: _ = get_account!(scope, account.id)
     Account.changeset(account, attrs)
   end
+
+  @doc """
+  Adds an existing user as a member of the given account, by email.
+
+  The scoped user must already belong to the account. Returns
+  `{:error, :user_not_found}` if no user exists with the given email,
+  or `{:error, %Ecto.Changeset{}}` if that user is already a member.
+
+  ## Examples
+
+      iex> add_member(scope, account, "spouse@example.com")
+      {:ok, %AccountUser{}}
+
+      iex> add_member(scope, account, "unknown@example.com")
+      {:error, :user_not_found}
+
+      iex> add_member(scope, account, "already_a_member@example.com")
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def add_member(%Scope{} = scope, %Account{} = account, email) do
+    # ensure the inviting user actually belongs to this account
+    _ = get_account!(scope, account.id)
+
+    case get_user_by_email(email) do
+      nil ->
+        {:error, :user_not_found}
+
+      user ->
+        %AccountUser{}
+        |> AccountUser.changeset(%{account_id: account.id, user_id: user.id})
+        |> Repo.insert()
+    end
+  end
 end

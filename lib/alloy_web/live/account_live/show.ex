@@ -2,6 +2,7 @@ defmodule AlloyWeb.AccountLive.Show do
   use AlloyWeb, :live_view
 
   alias Alloy.Accounts
+  alias Alloy.Repo
 
   @impl true
   def render(assigns) do
@@ -24,6 +25,17 @@ defmodule AlloyWeb.AccountLive.Show do
         <:item title="Name">{@account.name}</:item>
         <:item title="Type">{@account.type}</:item>
       </.list>
+
+      <h3>Members</h3>
+      <ul>
+        <li :for={user <- @account.users}>{user.email}</li>
+      </ul>
+
+      <h3>Add a member</h3>
+      <.form for={@member_form} id="add-member-form" phx-submit="add_member">
+        <.input field={@member_form[:email]} type="text" label="Email" />
+        <.button phx-disable-with="Adding...">Add</.button>
+      </.form>
     </Layouts.app>
     """
   end
@@ -34,10 +46,36 @@ defmodule AlloyWeb.AccountLive.Show do
       Accounts.subscribe_accounts(socket.assigns.current_scope)
     end
 
+    account =
+      socket.assigns.current_scope
+      |> Accounts.get_account!(id)
+      |> Repo.preload(:users)
+
     {:ok,
      socket
      |> assign(:page_title, "Show Account")
-     |> assign(:account, Accounts.get_account!(socket.assigns.current_scope, id))}
+     |> assign(:account, account)
+     |> assign(:member_form, to_form(%{"email" => ""}))}
+  end
+
+  @impl true
+  def handle_event("add_member", %{"email" => email}, socket) do
+    case Accounts.add_member(socket.assigns.current_scope, socket.assigns.account, email) do
+      {:ok, _account_user} ->
+        account = Repo.preload(socket.assigns.account, :users, force: true)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Member added successfully")
+         |> assign(:account, account)
+         |> assign(:member_form, to_form(%{"email" => ""}))}
+
+      {:error, :user_not_found} ->
+        {:noreply, put_flash(socket, :error, "No user found with that email")}
+
+      {:error, %Ecto.Changeset{}} ->
+        {:noreply, put_flash(socket, :error, "That user is already a member")}
+    end
   end
 
   @impl true
