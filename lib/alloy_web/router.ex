@@ -66,6 +66,7 @@ defmodule AlloyWeb.Router do
       live "/transactions/:id/edit", TransactionLive.Form, :edit
 
       live "/dashboard", DashboardLive, :index
+      live "/transfers/new", TransferLive.New, :new
     end
 
     post "/users/update-password", UserSessionController, :update_password

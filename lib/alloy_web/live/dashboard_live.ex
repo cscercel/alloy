@@ -8,7 +8,16 @@ defmodule AlloyWeb.DashboardLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <.header>Dashboard</.header>
+      <.header>
+        Dashboard
+        <:actions>
+          <.button navigate={~p"/accounts"}>Accounts</.button>
+          <.button navigate={~p"/transactions"}>Transactions</.button>
+          <.button variant="primary" navigate={~p"/transfers/new"}>
+            <.icon name="hero-arrow-right-circle" /> New Transfer
+          </.button>
+        </:actions>
+      </.header>
 
       <ul>
         <li :for={row <- @summaries}>
