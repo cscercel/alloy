@@ -67,6 +67,11 @@ defmodule AlloyWeb.Router do
 
       live "/dashboard", DashboardLive, :index
       live "/transfers/new", TransferLive.New, :new
+
+      live "/categories", CategoryLive.Index, :index
+      live "/categories/new", CategoryLive.Form, :new
+      live "/categories/:id", CategoryLive.Show, :show
+      live "/categories/:id/edit", CategoryLive.Form, :edit
     end
 
     post "/users/update-password", UserSessionController, :update_password

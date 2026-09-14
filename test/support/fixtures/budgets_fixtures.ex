@@ -19,4 +19,17 @@ defmodule Alloy.BudgetsFixtures do
     {:ok, transaction} = Alloy.Budgets.create_transaction(scope, attrs)
     transaction
   end
+
+  @doc """
+  Generate a category.
+  """
+  def category_fixture(scope, attrs \\ %{}) do
+    attrs =
+      Enum.into(attrs, %{
+        name: "some name"
+      })
+
+    {:ok, category} = Alloy.Budgets.create_category(scope, attrs)
+    category
+  end
 end
